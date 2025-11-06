@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_weatherapi_f25/rest_api.dart';
+import 'package:flutter_weatherapi_f25/weather_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,13 +31,39 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Widget weatherTile (int position) {
-    print ("Inside weatherTile and setting up tile for positon ${position}");
+
+  late Future<List<ListElement>> futureWeatherForcasts;
+  @override
+  void initState() {
+    super.initState();
+    // call fetchWeather
+    print('in initState about to get weather...');
+    futureWeatherForcasts = fetchDailyWeather();
+  }
+
+
+
+  Widget weatherTile (ListElement weather) {
+    // print ("Inside weatherTile and setting up tile for positon ${position}");
     return ListTile(
-      leading: Image(image: AssetImage('graphics/sun.png')),
-      title: Text("Title Here"),
-      subtitle: Text("Subtitle Here"),
+      leading: weatherIcon(weather.weather[0].main),
+      title: Text('Wind degrees will be ${weather.wind.deg.toString()}'),
+      subtitle: Text(weather.weather[0].description),
     );
+  }
+
+  Image weatherIcon(String weatherDescription){
+    print("Loading icon for $weatherDescription");
+    if (weatherDescription == "Rain"){
+      print("Using rain.png");
+      return Image(image: AssetImage('graphics/rain.png'));
+    }
+    if (weatherDescription == "Clouds"){
+      print("Using rain.png");
+      return Image(image: AssetImage('graphics/cloud.png'));
+    }
+    print("Using rain.png");
+    return Image(image: AssetImage('graphics/sun.png'));
   }
 
   @override
@@ -44,13 +72,23 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ListView.builder(
-        itemCount: 4,
-        itemBuilder: (BuildContext context, int position) {
-          return Card(
-            child: weatherTile(position),
+      body: FutureBuilder(
+        future: futureWeatherForcasts,
+        builder: (context, asyncSnapshot) {
+          if (asyncSnapshot.data == null || asyncSnapshot.connectionState == ConnectionState.none){
+            return Container();
+
+          }
+          List<ListElement> weather = asyncSnapshot.data!;
+          return ListView.builder(
+            itemCount: weather.length,
+            itemBuilder: (BuildContext context, int position) {
+              return Card(
+                child: weatherTile(weather[position]),
+              );
+            },
           );
-        },
+        }
       ),
       // This trailing comma makes auto-formatting nicer for build methods.
     );
